@@ -1,4 +1,6 @@
 const axios = require('axios');
+let found = false;
+let counter = 0;
 
 const getArgs = () => {
     return process.argv.reduce((acc, ite) => {
@@ -8,6 +10,10 @@ const getArgs = () => {
         }
         return acc;
     }, {});
+}
+
+const runbuzzer = () => {
+    console.log("\007");
 }
 
 const modifyData = (resData, type) => {
@@ -31,13 +37,26 @@ const modifyData = (resData, type) => {
             return acc;
         },[])
     }
-    console.log(finalData);
+    let s = new Date().toLocaleString(undefined, {timeZone: 'Asia/Kolkata'});
+    if(finalData.availability.length) {
+        // found = true;
+        console.log('FOUND - @ -', s)
+        console.log(finalData);
+        runbuzzer();
+    } else {
+        console.log('NOT FOUND - @ -', s)
+        runbuzzer();
+        if(counter > 100) {
+            // found = true;
+        }
+        counter++;
+    }
 }
 
 const fetchSlots = (pincode=110001, type=1) => {
     const date = new Date();
     const dateString = `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getFullYear()}`;
-    const queryString = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode=${pincode}&date=${dateString}`;
+    const queryString = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByPin?pincode=${pincode}&date=${dateString}`;
     axios.get(queryString).then(function (response) {
         // handle success
         modifyData(response.data, type);
@@ -50,5 +69,9 @@ const fetchSlots = (pincode=110001, type=1) => {
 
 const args = getArgs();
 
-// console.log('Args', args)
-fetchSlots(args.pincode, args.type);
+let interval = setInterval(() => {
+    fetchSlots(args.pincode, args.type);
+    if(found) {
+        clearInterval(interval);
+    }
+}, 5000)
